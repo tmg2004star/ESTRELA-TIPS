@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ushindi Tips | Nyumbani</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #f1c40f; 
+            --dark-bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-white: #ffffff;
+            --text-gray: #b3b3b3;
+            --green: #2ecc71;
+            --red: #e74c3c;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--dark-bg); color: var(--text-white); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* --- HEADER & SEARCH --- */
+        .header { padding: 15px; background: var(--dark-bg); position: sticky; top: 0; z-index: 10; }
+        .search-box { background: var(--card-bg); border-radius: 30px; padding: 10px 20px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .search-box input { background: transparent; border: none; color: white; margin-left: 10px; width: 100%; outline: none; font-size: 14px; }
+
+        /* --- SCROLLABLE CONTENT AREA --- */
+        .content { flex: 1; overflow-y: auto; padding-bottom: 90px; }
+
+        /* --- MABANGO (BANNERS) --- */
+        .banner-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; padding: 15px; -webkit-overflow-scrolling: touch; }
+        .banner-container::-webkit-scrollbar { display: none; }
+        .banner-card { min-width: 90%; height: 160px; background: #333; border-radius: 15px; scroll-snap-align: center; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .banner-card img { width: 100%; height: 100%; object-fit: cover; opacity: 1; }
+        .banner-text { position: absolute; font-weight: bold; font-size: 18px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+
+        /* --- SECTIONS HEADERS --- */
+        .section-title { padding: 0 15px; font-size: 16px; font-weight: 600; margin-top: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        
+        /* --- TIPSTER LIST --- */
+        .tipster-list { padding: 0 15px; }
+        .tipster-card { background: var(--card-bg); padding: 15px; border-radius: 15px; display: flex; align-items: center; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; transition: 0.2s; }
+        .tipster-card:active { transform: scale(0.98); }
+        .t-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); margin-right: 15px; }
+        .t-info { flex: 1; }
+        .t-name { font-weight: bold; font-size: 15px; display: block; text-transform: capitalize; }
+        .t-stats { font-size: 12px; color: var(--text-gray); }
+        .t-accuracy { background: rgba(241, 196, 15, 0.15); color: var(--primary); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+
+        /* --- PROFILE VIEW --- */
+        #tipster-profile-view { display: none; background: var(--dark-bg); min-height: 100%; padding: 15px; }
+        .profile-header { display: flex; align-items: center; margin-bottom: 20px; }
+        .back-btn { font-size: 20px; padding: 10px; cursor: pointer; margin-right: 10px; }
+        
+        /* --- BET CARDS --- */
+        .bet-card { background: var(--card-bg); border-radius: 15px; overflow: hidden; margin-bottom: 15px; position: relative; border-left: 4px solid var(--primary); }
+        .bet-header { padding: 15px; display: flex; justify-content: space-between; border-bottom: 1px dashed #333; }
+        .bet-body { padding: 15px; }
+        .bet-footer { background: #252525; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+        .countdown { color: var(--red); font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px; }
+        
+        /* --- NEW STYLES FOR BLURRED IMAGE & EYE --- */
+        .bet-image-container {
+            position: relative;
+            width: 100%;
+            height: 180px; /* Fixed height for consistency */
+            overflow: hidden;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            background: #333; /* Fallback if no image */
+        }
+        .bet-image-blurred {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: blur(8px); /* The blurring effect */
+            -webkit-filter: blur(8px);
+            opacity: 0.6;
+            transition: 0.5s ease-in-out;
+        }
+        .eye-overlay-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.6);
+            color: var(--primary);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            border: 2px solid var(--primary);
+            z-index: 5;
+            transition: 0.3s;
+        }
+        .eye-overlay-btn:hover { background: rgba(0,0,0,0.8); transform: translate(-50%, -50%) scale(1.1); }
+        .tap-to-view-text { position: absolute; bottom: 10px; width: 100%; text-align: center; color: white; font-size: 12px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+
+        .company-logo-small { width: 22px; height: 22px; border-radius: 4px; vertical-align: middle; margin-right: 6px; background: white; object-fit: contain; }
+
+        /* --- PAYMENT MODAL STYLES --- */
+        .payment-modal {
+            display: none; /* Hidden by default */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 2000;
+            align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .payment-box {
+            background: var(--card-bg); width: 100%; max-width: 400px;
+            padding: 25px; border-radius: 20px; text-align: center;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .payment-header h3 { color: var(--primary); margin-bottom: 10px; }
+        .payment-amount { font-size: 28px; font-weight: bold; color: var(--green); margin: 15px 0; }
+        .mno-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px;
+        }
+        .mno-option {
+            background: #2a2a2a; padding: 15px; border-radius: 12px;
+            cursor: pointer; border: 2px solid transparent; transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .mno-option:hover { border-color: var(--primary); background: #333; }
+        .mno-logo { width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px; border-radius: 10px; background: white; padding: 5px; }
+        .mno-name { font-size: 12px; font-weight: bold; }
+
+
+        /* --- HISTORY --- */
+        .status-badge { padding: 5px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; text-transform: uppercase; }
+        .status-win { background: rgba(46, 204, 113, 0.2); color: var(--green); border: 1px solid var(--green); }
+        .status-loss { background: rgba(231, 76, 60, 0.2); color: var(--red); border: 1px solid var(--red); }
+        .filter-tabs { display: flex; gap: 10px; padding: 0 15px 15px 15px; }
+        .f-tab { padding: 8px 16px; background: var(--card-bg); border-radius: 20px; font-size: 12px; color: var(--text-gray); cursor: pointer; border: 1px solid #333; }
+        .f-tab.active { background: var(--primary); color: black; border-color: var(--primary); font-weight: bold; }
+
+        /* --- SETTINGS --- */
+        .settings-list { list-style: none; padding: 0 15px; }
+        .settings-list li { padding: 18px 0; border-bottom: 1px solid #333; display: flex; align-items: center; cursor: pointer; font-size: 15px; }
+        .settings-list li i { width: 35px; color: var(--primary); font-size: 18px; }
+        .settings-list li span { flex: 1; }
+        .settings-list li .arrow { color: #555; width: auto; font-size: 14px; }
+
+        /* --- BOTTOM NAV --- */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 75px; background-color: var(--card-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #333; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -5px 15px rgba(0,0,0,0.3); z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-gray); text-decoration: none; cursor: pointer; flex: 1; }
+        .nav-item i { font-size: 20px; margin-bottom: 4px; }
+        .nav-item span { font-size: 10px; } 
+        .nav-item.active { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <main class="content" id="main-content">
+        
+        <div id="home-view">
+            <div class="header">
+                <div class="search-box">
+                    <i class="fas fa-search" style="color: #777;"></i>
+                    <input type="text" placeholder="Tafuta Tipster hapa..." onkeyup="filterTipsters(this.value)">
+                </div>
+            </div>
+
+            <div class="banner-container" id="dynamic-banners">
+                <p style="padding: 20px; color: #777;">Inapakia matangazo...</p>
+            </div>
+
+            <div class="section-title">
+                <span>Best Tipsters 🔥</span>
+                <span style="font-size:12px; color:var(--primary);">Accuracy</span>
+            </div>
+            <div class="tipster-list" id="best-tipsters-list"><p style="text-align:center; color:#777;">Inatafuta tipsters...</p></div>
+
+            <div class="section-title"><span>Other Tipsters</span></div>
+            <div class="tipster-list" id="other-tipsters-list"></div>
+        </div>
+
+        <div id="tipster-profile-view">
+            <div class="profile-header">
+                <i class="fas fa-arrow-left back-btn" onclick="closeProfile()"></i>
+                <div style="display:flex; align-items:center;">
+                    <img id="p-img" src="" class="t-img" style="width:40px; height:40px;">
+                    <div>
+                        <span id="p-name" style="font-weight:bold; display:block;">Jina</span>
+                        <span id="p-acc" style="font-size:12px; color:var(--primary);">Accuracy: 0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title"><span>Mikeka Iliyo Hewani</span></div>
+            <div id="p-active-bets"><p style="text-align:center; color:#777;">Hakuna mikeka hewani</p></div>
+
+            <div class="section-title" style="margin-top:20px;"><span>History (Matokeo)</span></div>
+            <div id="p-history-bets"><p style="text-align:center; color:#777;">Hakuna historia</p></div>
+        </div>
+
+        <div id="betslip-view" style="display:none; padding:15px;">
+            <h2 style="margin-bottom:15px; font-size:20px;">Mikeka Inayoendelea</h2>
+            <div id="all-active-bets"><p style="text-align:center; color:#777;">Hakuna mikeka inayoendelea</p></div>
+        </div>
+
+        <div id="history-view" style="display:none; padding-top:15px;">
+            <h2 style="padding:0 15px 15px 15px; font-size:20px;">Historia ya Mikeka</h2>
+            <div class="filter-tabs">
+                <div class="f-tab active" onclick="filterHistory('all', this)">Yote</div>
+                <div class="f-tab" onclick="filterHistory('won', this)">Ushindi</div>
+                <div class="f-tab" onclick="filterHistory('lost', this)">Hasara</div>
+            </div>
+            <div id="history-list" style="padding:0 15px;"></div>
+        </div>
+
+        <div id="settings-view" style="display:none;">
+            <div style="padding:40px 20px; text-align:center; background:var(--card-bg); margin-bottom:10px; border-bottom: 2px solid var(--primary);">
+                <i class="fas fa-user-circle" style="font-size: 60px; color: var(--primary); margin-bottom: 10px;"></i>
+                <h3 id="user-phone-display" style="letter-spacing: 1px;">Inaleta Namba...</h3>
+                <p style="color:#777; font-size:12px; margin-top:5px;">Akaunti ya Mtumiaji</p>
+            </div>
+            
+            <ul class="settings-list">
+                <li><i class="fas fa-receipt"></i> <span>Mikeka Niliyonunua</span> <i class="fas fa-chevron-right arrow"></i></li>
+                <li><i class="fas fa-user-shield"></i> <span>Sera ya Faragha</span> <i class="fas fa-chevron-right arrow"></i></li>
+                <li><i class="fas fa-file-contract"></i> <span>Vigezo na Masharti</span> <i class="fas fa-chevron-right arrow"></i></li>
+                <li><i class="fas fa-headset"></i> <span>Msaada kwa Wateja</span> <i class="fas fa-chevron-right arrow"></i></li>
+                <li onclick="logoutUser()" style="color:var(--red);"><i class="fas fa-sign-out-alt" style="color:var(--red);"></i> <span style="font-weight:bold;">Ondoka (Logout)</span></li>
+            </ul>
+        </div>
+
+    </main>
+    
+    <div class="payment-modal" id="paymentModal">
+        <div class="payment-box">
+            <div class="payment-header">
+                <h3>Chagua Mtandao wa Kulipia</h3>
+                <p style="color:#bbb; font-size:14px;">Gharama ya Mkeka huu:</p>
+            </div>
+            <div class="payment-amount" id="modal-price">TZS 0/=</div>
+            <p style="font-size:12px; color:#777;">Bonyeza mtandao wako, utapata ujumbe kwenye simu kuweka namba ya siri.</p>
+            
+            <div class="mno-grid">
+                <div class="mno-option" onclick="triggerPayment('vodacom')">
+                    <img src="MPESA.PNG" class="mno-logo">
+                    <span class="mno-name">M-Pesa</span>
+                </div>
+                <div class="mno-option" onclick="triggerPayment('airtel')">
+                    <img src="airtel money.PNG" class="mno-logo">
+                    <span class="mno-name">Airtel Money</span>
+                </div>
+                <div class="mno-option" onclick="triggerPayment('tigo')">
+                    <img src="mixx by yas.PNG" class="mno-logo">
+                    <span class="mno-name">Tigo Pesa</span>
+                </div>
+                <div class="mno-option" onclick="triggerPayment('halotel')">
+                    <img src="halopesa.PNG" class="mno-logo">
+                    <span class="mno-name">HaloPesa</span>
+                </div>
+            </div>
+            
+            <button onclick="closePaymentModal()" style="margin-top:25px; background:transparent; border:1px solid #555; color:#bbb; padding:10px 30px; border-radius:20px; cursor:pointer;">Ghairi</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('home-view', this)"><i class="fas fa-home"></i> <span>Nyumbani</span></div>
+        <div class="nav-item" onclick="switchTab('betslip-view', this)"><i class="fas fa-ticket-alt"></i> <span>Mikeka</span></div>
+        <div class="nav-item" onclick="switchTab('history-view', this)"><i class="fas fa-history"></i> <span>Historia</span></div>
+        <div class="nav-item" onclick="switchTab('settings-view', this)"><i class="fas fa-cog"></i> <span>Mipangilio</span></div>
+    </nav>
+
+    <script>
+        const SUPABASE_URL = "https://hgszvjuzjwmogmnslzkg.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhnc3p2anV6andtb2dtbnNsemtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxNTAyMDAsImV4cCI6MjA4NTcyNjIwMH0.aYxh_5KSuaJkI2kgdMbRGdntDuLu8-saYMUqkxm1GUE";
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // HAPA TUNAWEKA MAPPING YA LOGO ZA KAMPUNI
+        const companyLogos = { 
+            'SportyBet': 'sporty bet.PNG', 
+            'Betpawa': 'bet pawa.PNG', 
+            'Sportpesa': 'sport pesa.PNG', 
+            'Betway': 'betway.PNG', 
+            'Betika': 'betika.PNG', 
+            'Sokabet': 'soka bet.PNG',
+            'Kampuni': 'sporty bet.PNG' // Default fallback
+        };
+
+        let globalTipsters = [];
+        let globalBets = [];
+        let currentUserPhone = ""; 
+        let currentBetIdToBuy = null; 
+
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                window.location.replace("user.html"); 
+                return;
+            }
+            currentUserPhone = session.user.phone;
+            document.getElementById('user-phone-display').innerText = currentUserPhone;
+            fetchDataFromSupabase();
+        }
+
+        async function fetchAds() {
+            try {
+                const { data: ads, error } = await supabaseClient
+                    .from('ads_pool')
+                    .select('url')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                const bannerContainer = document.getElementById('dynamic-banners');
+                if (ads && ads.length > 0) {
+                    bannerContainer.innerHTML = ads.map(ad => `
+                        <div class="banner-card">
+                            <img src="${ad.url}" alt="Tangazo">
+                        </div>
+                    `).join('');
+                } else {
+                    bannerContainer.innerHTML = `
+                        <div class="banner-card" style="background: linear-gradient(45deg, #e74c3c, #8e44ad);"><span class="banner-text">Shinda Kila Siku</span></div>
+                        <div class="banner-card" style="background: linear-gradient(45deg, #2ecc71, #f1c40f);"><span class="banner-text">Odds Kubwa</span></div>
+                    `;
+                }
+            } catch (error) { console.error("Kosa kuvuta matangazo:", error.message); }
+        }
+
+        async function fetchDataFromSupabase() {
+            try {
+                fetchAds();
+
+                const { data: tipstersData, error: tError } = await supabaseClient
+                    .from('profiles')
+                    .select('*')
+                    .eq('role', 'tipster');
+
+                if (tError) throw tError;
+
+                const { data: betsData, error: bError } = await supabaseClient
+                    .from('mikeka')
+                    .select('*, profiles(full_name, avatar_url)')
+                    .order('created_at', { ascending: false });
+
+                if (bError) throw bError;
+
+                globalBets = betsData || [];
+                
+                globalTipsters = (tipstersData || []).map(tipster => {
+                    const allTipsterBets = globalBets.filter(b => b.user_id === tipster.id);
+                    const finishedBets = allTipsterBets.filter(b => b.status === 'WON' || b.status === 'LOST');
+                    const wonBets = finishedBets.filter(b => b.status === 'WON').length;
+                    
+                    let accuracy = 0;
+                    if (finishedBets.length > 0) {
+                        accuracy = Math.round((wonBets / finishedBets.length) * 100);
+                    }
+
+                    return {
+                        ...tipster,
+                        accuracy: accuracy,
+                        total_posted: allTipsterBets.length, 
+                        finished_bets: finishedBets.length, 
+                        total_won: wonBets, 
+                        avatar_url: tipster.avatar_url || 'https://i.pravatar.cc/150?img=11',
+                        full_name: tipster.full_name || 'Tipster Asiyejulikana'
+                    };
+                });
+
+                renderTipsters();
+            } catch (error) {
+                console.error("Kosa kuvuta data:", error.message);
+                document.getElementById('best-tipsters-list').innerHTML = `<p style="color:red; text-align:center;">Kosa la mtandao. Jaribu tena.</p>`;
+            }
+        }
+
+        function renderTipsters() {
+            const bestList = document.getElementById('best-tipsters-list');
+            const otherList = document.getElementById('other-tipsters-list');
+            bestList.innerHTML = ''; otherList.innerHTML = '';
+
+            const sorted = [...globalTipsters].sort((a, b) => b.accuracy - a.accuracy || b.total_posted - a.total_posted);
+
+            sorted.forEach(t => {
+                const card = `
+                    <div class="tipster-card" onclick="openTipsterProfile('${t.id}')">
+                        <img src="${t.avatar_url}" class="t-img">
+                        <div class="t-info">
+                            <span class="t-name">${t.full_name}</span>
+                            <span class="t-stats">Mikeka yote: ${t.total_posted} | Imeshinda: ${t.total_won}</span>
+                        </div>
+                        <span class="t-accuracy">${t.accuracy}%</span>
+                    </div>
+                `;
+                
+                if(t.accuracy >= 70 && t.finished_bets > 0) {
+                    bestList.innerHTML += card;
+                } else {
+                    otherList.innerHTML += card;
+                }
+            });
+
+            if(bestList.innerHTML === '') bestList.innerHTML = '<p style="text-align:center; color:#777; font-size:13px; padding:10px;">Hakuna Top Tipster bado.</p>';
+            if(otherList.innerHTML === '') otherList.innerHTML = '<p style="text-align:center; color:#777; font-size:13px; padding:10px;">Hakuna Tipsters wengine.</p>';
+        }
+
+        function openTipsterProfile(tipsterId) {
+            const tipster = globalTipsters.find(t => t.id === tipsterId);
+            const tBets = globalBets.filter(b => b.user_id === tipsterId && b.visible === true); 
+
+            document.getElementById('p-img').src = tipster.avatar_url;
+            document.getElementById('p-name').innerText = tipster.full_name;
+            document.getElementById('p-acc').innerText = "Accuracy: " + tipster.accuracy + "%";
+
+            const activeDiv = document.getElementById('p-active-bets');
+            const historyDiv = document.getElementById('p-history-bets');
+            activeDiv.innerHTML = ''; historyDiv.innerHTML = '';
+
+            tBets.forEach(b => {
+                let company = b.code_sportybet ? "SportyBet" : b.code_betpawa ? "Betpawa" : b.code_sportpesa ? "Sportpesa" : b.code_betway ? "Betway" : b.code_betika ? "Betika" : b.code_sokabet ? "Sokabet" : "Kampuni";
+                let logoSrc = companyLogos[company] || 'sporty bet.PNG'; 
+
+                // HIZI NDIO CODE ZILIZOFICHWA ZITAKAZOONEKANA AKILIPIA
+                let secretCodesHTML = `
+                    <div class="secret-codes" style="display:none; margin-top: 15px; padding: 15px; background: #111; border-radius: 8px; border: 1px solid var(--success);">
+                        <h4 style="color:var(--success); font-size:14px; margin-bottom:10px; text-align:center;">MKEKA WAKO HUU HAPA ✅</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px;">
+                            ${b.code_sportybet ? `<div>SportyBet:<br><b style="color:white; font-size:16px;">${b.code_sportybet}</b></div>` : ''}
+                            ${b.code_betpawa ? `<div>BetPawa:<br><b style="color:white; font-size:16px;">${b.code_betpawa}</b></div>` : ''}
+                            ${b.code_sportpesa ? `<div>SportPesa:<br><b style="color:white; font-size:16px;">${b.code_sportpesa}</b></div>` : ''}
+                            ${b.code_betway ? `<div>Betway:<br><b style="color:white; font-size:16px;">${b.code_betway}</b></div>` : ''}
+                            ${b.code_betika ? `<div>Betika:<br><b style="color:white; font-size:16px;">${b.code_betika}</b></div>` : ''}
+                            ${b.code_sokabet ? `<div>Sokabet:<br><b style="color:white; font-size:16px;">${b.code_sokabet}</b></div>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                if(b.status === 'PENDING') {
+                    let contentBody = '';
+                    if(b.file_url) {
+                         contentBody = `
+                            <div class="bet-image-container">
+                                <img src="${b.file_url}" class="bet-image-blurred">
+                                <div class="eye-overlay-btn" onclick="openPaymentModal('${b.id}', '${b.price}')">
+                                    <i class="fas fa-eye"></i>
+                                </div>
+                                <span class="tap-to-view-text">Gusa Jicho Kulipia & Kuona Code</span>
+                            </div>
+                             <div class="buy-btn-container" style="text-align:center; margin-bottom: 10px;">
+                                 <h2 style="color:var(--primary); font-size: 18px;">Gharama: TZS ${b.price}/=</h2>
+                            </div>
+                            ${secretCodesHTML}
+                        `;
+                    } else {
+                         contentBody = `
+                            <div class="buy-btn-container" style="text-align:center;">
+                                <h2 style="color:var(--primary);">TZS ${b.price}/=</h2>
+                                <button style="margin-top:10px; background:var(--primary); border:none; padding:8px 20px; border-radius:20px; font-weight:bold; color:black;" onclick="openPaymentModal('${b.id}', '${b.price}')">NUNUA SASA KUONA CODE</button>
+                            </div>
+                            ${secretCodesHTML}
+                        `;
+                    }
+
+                    activeDiv.innerHTML += `
+                        <div class="bet-card bet-item-${b.id}">
+                            <div class="bet-header">
+                                <span class="header-code-txt" style="font-weight:bold; color:#777;">Code imefichwa</span>
+                                <span style="background:black; color:white; padding:2px 8px; border-radius:5px;">Odds ${b.odds}</span>
+                            </div>
+                            <div class="bet-body">
+                                ${contentBody}
+                            </div>
+                            <div class="bet-footer">
+                                <span><img src="${logoSrc}" class="company-logo-small"> ${company}</span>
+                                <span class="countdown" data-time="${b.start_datetime}"><i class="far fa-clock"></i> --:--</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const badge = b.status === 'WON' ? '<span class="status-badge status-win">WIN ✅</span>' : '<span class="status-badge status-loss">LOSS ❌</span>';
+                    const dateStr = new Date(b.start_datetime).toLocaleDateString();
+                    
+                    historyDiv.innerHTML += `
+                         <div class="bet-card bet-item-${b.id}" style="border-left: 4px solid ${b.status === 'WON' ? 'var(--green)' : 'var(--red)'}; cursor:pointer;">
+                            <div class="bet-header"><span>${dateStr}</span>${badge}</div>
+                            <div class="bet-body" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div><span style="display:block; font-size:12px; color:#777;"><img src="${logoSrc}" class="company-logo-small"> ${company}</span><span style="font-weight:bold; font-size:18px;">Odds ${b.odds}</span></div>
+                                <i class="fas fa-chevron-right" style="color:#555;"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if(activeDiv.innerHTML === '') activeDiv.innerHTML = '<p style="text-align:center; color:#777;">Hakuna mikeka hewani</p>';
+            if(historyDiv.innerHTML === '') historyDiv.innerHTML = '<p style="text-align:center; color:#777;">Hakuna historia</p>';
+
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('tipster-profile-view').style.display = 'block';
+            window.scrollTo(0,0);
+        }
+
+        function closeProfile() {
+            document.getElementById('tipster-profile-view').style.display = 'none';
+            document.getElementById('home-view').style.display = 'block';
+        }
+
+        function renderBetslipTab() {
+            const container = document.getElementById('all-active-bets');
+            container.innerHTML = '';
+            
+            const activeBets = globalBets.filter(b => b.status === 'PENDING' && b.visible === true);
+
+            activeBets.forEach(b => {
+                let company = b.code_sportybet ? "SportyBet" : b.code_betpawa ? "Betpawa" : b.code_sportpesa ? "Sportpesa" : b.code_betway ? "Betway" : b.code_betika ? "Betika" : b.code_sokabet ? "Sokabet" : "Kampuni";
+                let logoSrc = companyLogos[company] || 'sporty bet.PNG'; 
+                let tName = (b.profiles && b.profiles.full_name) ? b.profiles.full_name : "Tipster Asiyejulikana";
+                let tImg = (b.profiles && b.profiles.avatar_url) ? b.profiles.avatar_url : "https://i.pravatar.cc/150?img=11";
+
+                let secretCodesHTML = `
+                    <div class="secret-codes" style="display:none; margin-top: 15px; padding: 15px; background: #111; border-radius: 8px; border: 1px solid var(--success);">
+                        <h4 style="color:var(--success); font-size:14px; margin-bottom:10px; text-align:center;">MKEKA WAKO HUU HAPA ✅</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px;">
+                            ${b.code_sportybet ? `<div>SportyBet:<br><b style="color:white; font-size:16px;">${b.code_sportybet}</b></div>` : ''}
+                            ${b.code_betpawa ? `<div>BetPawa:<br><b style="color:white; font-size:16px;">${b.code_betpawa}</b></div>` : ''}
+                            ${b.code_sportpesa ? `<div>SportPesa:<br><b style="color:white; font-size:16px;">${b.code_sportpesa}</b></div>` : ''}
+                            ${b.code_betway ? `<div>Betway:<br><b style="color:white; font-size:16px;">${b.code_betway}</b></div>` : ''}
+                            ${b.code_betika ? `<div>Betika:<br><b style="color:white; font-size:16px;">${b.code_betika}</b></div>` : ''}
+                            ${b.code_sokabet ? `<div>Sokabet:<br><b style="color:white; font-size:16px;">${b.code_sokabet}</b></div>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                let contentBody = '';
+                if(b.file_url) {
+                        contentBody = `
+                        <div class="bet-image-container">
+                            <img src="${b.file_url}" class="bet-image-blurred">
+                            <div class="eye-overlay-btn" onclick="openPaymentModal('${b.id}', '${b.price}')">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                            <span class="tap-to-view-text">Gusa Jicho Kulipia & Kuona Code</span>
+                        </div>
+                        <div class="buy-btn-container" style="text-align:center; padding-top: 5px;">
+                                <p style="font-size:12px; color:#888; margin-bottom:5px;">Gharama ya Mkeka huu</p>
+                                <h2 style="color:var(--green); font-size: 24px; margin-bottom: 10px;">TZS ${b.price}/=</h2>
+                        </div>
+                        ${secretCodesHTML}
+                    `;
+                } else {
+                        contentBody = `
+                        <div class="buy-btn-container" style="text-align:center; padding-top: 10px;">
+                                <p style="font-size:12px; color:#888; margin-bottom:5px;">Gharama ya Mkeka huu</p>
+                                <h2 style="color:var(--green); font-size: 24px; margin-bottom: 15px;">TZS ${b.price}/=</h2>
+                                <button style="width:100%; background:var(--primary); border:none; padding:12px; border-radius:12px; font-weight:bold; color:black; font-size:15px; cursor:pointer;" onclick="openPaymentModal('${b.id}', '${b.price}')">NUNUA MKEKA KUONA CODE</button>
+                        </div>
+                        ${secretCodesHTML}
+                    `;
+                }
+
+                container.innerHTML += `
+                     <div class="bet-card bet-item-${b.id}">
+                        <div class="bet-header" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="display:flex; align-items:center; gap: 10px;">
+                                <img src="${tImg}" style="width:38px; height:38px; border-radius:50%; border: 2px solid var(--primary); object-fit:cover;">
+                                <div>
+                                    <span style="font-size:14px; font-weight:bold; display:block; color:white; text-transform:capitalize;">${tName}</span>
+                                    <span class="header-code-txt" style="font-size:11px; color:var(--text-gray);">Code Imefichwa</span>
+                                </div>
+                            </div>
+                            <span style="background:var(--primary); padding:4px 10px; border-radius:8px; font-size:12px; font-weight:bold; color:black;">Odds ${b.odds}</span>
+                        </div>
+                        <div class="bet-body">
+                             ${contentBody}
+                        </div>
+                        <div class="bet-footer">
+                            <span><img src="${logoSrc}" class="company-logo-small"> ${company}</span>
+                            <span class="countdown" data-time="${b.start_datetime}"><i class="far fa-clock"></i> --:--</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if(container.innerHTML === '') container.innerHTML = '<p style="text-align:center; color:#777; padding: 20px;">Hakuna mikeka mipya hewani kwa sasa.</p>';
+        }
+
+        // --- PAYMENT MODAL LOGIC ---
+        function openPaymentModal(betId, price) {
+            currentBetIdToBuy = betId;
+            document.getElementById('modal-price').innerText = "TZS " + Number(price).toLocaleString() + "/=";
+            document.getElementById('paymentModal').style.display = 'flex';
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+            currentBetIdToBuy = null;
+        }
+
+        // HAPA NDIPO MKEKA UNAFUNGULIWA BAADA YA MALIPO KUKAMILIKA KIMAJARIBIO
+        async function triggerPayment(network) {
+            alert(`Umechagua ${network.toUpperCase()}. \n\nInatuma ombi la malipo kwenda namba ${currentUserPhone} kwa ajili ya mkeka ID: ${currentBetIdToBuy}. \n\nSubiri ujumbe kwenye simu yako uweke namba ya siri.`);
+            
+            // 1. Ficha Modal
+            closePaymentModal();
+
+            // 2. Tafuta Kadi zote zenye ID hii (inaweza kuwepo kwenye Profile Tab na Betslip Tab)
+            const cards = document.querySelectorAll('.bet-item-' + currentBetIdToBuy);
+            
+            cards.forEach(card => {
+                // Toa ukungu kwenye picha
+                const blurImg = card.querySelector('.bet-image-blurred');
+                if (blurImg) { 
+                    blurImg.style.filter = 'none'; 
+                    blurImg.style.opacity = '1'; 
+                }
+                
+                // Ficha Kitufe cha Jicho na Maandishi
+                const eyeBtn = card.querySelector('.eye-overlay-btn');
+                if (eyeBtn) eyeBtn.style.display = 'none';
+                const tapText = card.querySelector('.tap-to-view-text');
+                if (tapText) tapText.style.display = 'none';
+                
+                // Ficha Kitufe cha Nunua na Bei
+                const buyContainer = card.querySelector('.buy-btn-container');
+                if (buyContainer) buyContainer.style.display = 'none';
+                
+                // ONA CODE ZILIZOFICHWA SASA
+                const secretCodes = card.querySelector('.secret-codes');
+                if (secretCodes) secretCodes.style.display = 'block';
+                
+                // Badili Maandishi ya juu
+                const headerCodeTxt = card.querySelector('.header-code-txt');
+                if (headerCodeTxt) {
+                    headerCodeTxt.innerText = "MKEKA UMELIPIWA ✅";
+                    headerCodeTxt.style.color = "var(--green)";
+                    headerCodeTxt.style.fontWeight = "bold";
+                }
+            });
+        }
+
+
+        function renderHistoryTab(filter = 'all') {
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
+
+            let historyBets = globalBets.filter(b => (b.status === 'WON' || b.status === 'LOST') && b.visible === true);
+
+            if(filter === 'won') historyBets = historyBets.filter(b => b.status === 'WON');
+            if(filter === 'lost') historyBets = historyBets.filter(b => b.status === 'LOST');
+
+            historyBets.forEach(b => {
+                let company = b.code_sportybet ? "SportyBet" : b.code_betpawa ? "Betpawa" : b.code_sportpesa ? "Sportpesa" : b.code_betway ? "Betway" : b.code_betika ? "Betika" : b.code_sokabet ? "Sokabet" : "Kampuni";
+                let logoSrc = companyLogos[company] || 'sporty bet.PNG'; 
+                let tName = b.profiles && b.profiles.full_name ? b.profiles.full_name : "Tipster Asiyejulikana";
+                let tImg = b.profiles && b.profiles.avatar_url ? b.profiles.avatar_url : "https://i.pravatar.cc/150?img=11";
+                const dateStr = new Date(b.start_datetime).toLocaleDateString();
+
+                const badge = b.status === 'WON' ? '<span class="status-badge status-win">WIN</span>' : '<span class="status-badge status-loss">LOSS</span>';
+                
+                container.innerHTML += `
+                    <div class="bet-card bet-item-${b.id}" style="border-left: 4px solid ${b.status === 'WON' ? 'var(--green)' : 'var(--red)'};">
+                        <div class="bet-header">
+                            <div style="display:flex; align-items:center;">
+                                <img src="${tImg}" style="width:25px; height:25px; border-radius:50%; margin-right:8px; object-fit:cover;">
+                                <span style="font-size:13px; font-weight:bold;">${tName}</span>
+                            </div>
+                            ${badge}
+                        </div>
+                        <div class="bet-body" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <span style="display:block; font-size:12px; color:#777;"><img src="${logoSrc}" class="company-logo-small"> ${company} - ${dateStr}</span>
+                                <span style="font-weight:bold; font-size:18px;">Odds ${b.odds}</span>
+                            </div>
+                            <div style="text-align:right;">
+                                <button style="background:transparent; border:1px solid #555; color:white; padding:5px 15px; border-radius:20px; font-size:12px;">Matokeo</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if(container.innerHTML === '') container.innerHTML = '<p style="text-align:center; color:#777;">Hakuna historia bado.</p>';
+        }
+
+        async function logoutUser() {
+            if(confirm("Una uhakika unataka kuondoka?")) {
+                await supabaseClient.auth.signOut();
+                window.location.replace("user.html");
+            }
+        }
+
+        function filterHistory(type, element) {
+            document.querySelectorAll('.f-tab').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
+            renderHistoryTab(type);
+        }
+
+        function switchTab(viewId, element) {
+            const views = ['home-view', 'betslip-view', 'history-view', 'settings-view'];
+            views.forEach(id => document.getElementById(id).style.display = 'none');
+            
+            document.getElementById('tipster-profile-view').style.display = 'none'; 
+            document.getElementById(viewId).style.display = 'block';
+
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            element.classList.add('active');
+
+            if(viewId === 'betslip-view') renderBetslipTab();
+            if(viewId === 'history-view') renderHistoryTab('all');
+        }
+
+        setInterval(() => {
+            document.querySelectorAll('.countdown').forEach(el => {
+                const endTime = new Date(el.getAttribute('data-time')).getTime();
+                const now = new Date().getTime();
+                const distance = endTime - now;
+                if (distance < 0) { el.innerHTML = "EXPIRED"; el.style.color = "gray"; } 
+                else {
+                    const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((distance % (1000 * 60)) / 1000);
+                    el.innerHTML = `<i class="far fa-clock"></i> ${h}h ${m}m ${s}s`;
+                }
+            });
+        }, 1000);
+
+        function filterTipsters(query) {
+            const lowerQ = query.toLowerCase();
+            document.querySelectorAll('.tipster-card').forEach(card => {
+                const name = card.querySelector('.t-name').innerText.toLowerCase();
+                card.style.display = name.includes(lowerQ) ? 'flex' : 'none';
+            });
+        }
+
+        checkAuth();
+
+    </script>
+</body>
+</html>
